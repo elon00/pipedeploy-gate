@@ -1,31 +1,36 @@
-﻿# Pipedeploy Gate (ticker)
-> Autonomous Production-Grade Protocol
+# Pipedeploy Gate — offline artifact integrity check
 
-[![CI/CD Pipeline](https://github.com/elon00/pipedeploy-gate/actions/workflows/ci-cd-pipeline.yml/badge.svg)](https://github.com/elon00/pipedeploy-gate/actions)
-[![Score](https://img.shields.io/badge/Reality%20Gates-100%2F100%20GENUINE%20GREEN-2ea44f?style=flat-square)](#reality-check-verification)
-[![NIST PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20%26%20204-blue?style=flat-square)](#security)
-[![Verified](https://img.shields.io/badge/Status-100%25%20Verified-gold?style=flat-square)](#pillars)
+This repository is the **tests** component (QMOOSA-0890) of the QMOOSA-1000 deployment-pipeline family. Its implemented scope is **local SHA-256 artifact integrity verification**, not a deployment system.
 
----
+## Run locally (Python 3.11+, standard library only)
 
-## About Pipedeploy Gate
-**Pipedeploy Gate (\ticker)** is an autonomous, decentralized, post-quantum intelligence protocol engineered for production-grade operational efficiency and cryptographic trust.
-
----
-
-## Running the Protocol Locally
-
-### 1. Execute Reality Check Harness (Python)
-``bash
+```bash
+python -m compileall -q src tests
+python -m unittest discover -s tests -p 'test_*.py' -v
 python tests/reality_check_harness.py
-``
+cargo fmt --all -- --check
+cargo test --all-targets
+```
 
-### 2. Run the High-Performance Rust State Engine
-``bash
-cargo run
-``
+To verify your own artifacts, prepare a UTF-8 JSON manifest with a nonempty artifact list:
 
----
+```json
+{
+  "schema_version": 1,
+  "artifacts": [
+    {"path": "build.bin", "sha256": "<64 lowercase hex SHA-256 characters>"}
+  ]
+}
+```
 
-## Reality Check Verification
-Pipedeploy Gate enforces strict pre-deployment verification: all invariants, cryptographic proofs, and micro-escrow contracts must achieve a **100/100 Genuine Green** rating before mainnet settlement.
+```bash
+python src/release_gate.py --manifest ./release-manifest.json --root ./dist
+```
+
+The command exits nonzero if a manifest is malformed, an artifact is missing, the SHA-256 digest differs, or a path is unsafe. It rejects symlink paths, hidden files, duplicate names, traversal, and unknown manifest fields. The tests use real temporary filesystem artifacts, tampering, and subprocesses; no fake network responses.
+
+## Security limits and status
+
+SHA-256 equality proves only that local bytes match a **trusted expected digest**. It does **not** authenticate who produced the digest, prove a reproducible build, prevent post-verification file replacement (TOCTOU), validate provenance/signatures, or establish deployment safety. The CLI does not deploy anything, use secrets, access RPC endpoints, implement PQC, or interact with a blockchain. The Rust binary is an informational stub, not a protocol engine.
+
+**IMPLEMENTED (limited offline gate): yes on this PR branch. CI_VERIFIED: requires successful PR-head workflows. SECURITY_APPROVED: no. DEPLOYMENT_READY: no. Production/FIPS certified: no.** Do not merge or promote readiness until all required checks and independent reviews are complete.
